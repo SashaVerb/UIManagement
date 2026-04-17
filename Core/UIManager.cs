@@ -104,7 +104,48 @@ namespace UIManagement
 
             return _groupContainers[groupId];
         }
+        
+        public static T Instantiate<T>(T prefab) where T : UIPanel
+        {
+            EnsureInitialized();
+            
+            if (prefab == null)
+            {
+                Debug.LogError("[UIManager] Instantiate was called with a null prefab.");
+                return null;
+            }
 
+            var type = typeof(T);
+
+            if (_panels.TryGetValue(type, out var existing))
+            {
+                Debug.LogWarning($"[UIManager] Prefab of type {type.Name} is already registered. Replacing.");
+
+                if (existing.GameObject != null)
+                {
+                    UnityEngine.Object.Destroy(existing.GameObject);
+                }
+            }
+
+            var container = GetOrCreateGroupContainer(0);
+            var instance = UnityEngine.Object.Instantiate(prefab, container);
+            if (instance == null)
+            {
+                Debug.LogError($"[UIManager] Failed to instantiate prefab of type {type.Name}.");
+                return null;
+            }
+
+            instance.HideImmediate();
+
+            _panels[type] = new PanelData(
+                0,
+                prefab.gameObject,
+                instance.gameObject,
+                instance);
+
+            return instance;
+        }
+        
         public static void RegisterPrefab<T>(T prefab, int groupId = 0) where T : Component
         {
             EnsureInitialized();

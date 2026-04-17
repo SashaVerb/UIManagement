@@ -9,7 +9,7 @@ namespace UIManagement
     {
         [SerializeField] private UIPanelAnimator _animator;
         
-        public CanvasGroup CanvasGroupComponent { get; private set; }
+        [field: SerializeField] public CanvasGroup CanvasGroupComponent { get; private set; }
         
         public UIPanelState State { get; private set; } = UIPanelState.Hidden;
 
@@ -87,7 +87,13 @@ namespace UIManagement
 
         private void SetInteractable(bool interactable)
         {
-            CanvasGroupComponent.blocksRaycasts = interactable;
+            if(CanvasGroupComponent != null)
+                CanvasGroupComponent.blocksRaycasts = interactable;
+        }
+        
+        private void OnValidate()
+        {
+            CanvasGroupComponent = GetComponent<CanvasGroup>();
         }
     }
 }

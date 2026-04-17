@@ -1,6 +1,6 @@
 {
   "name": "com.alexverb.uimanagement",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": "UI Management",
   "description": "Package for more easy managing UGUI in Unity",
   "dependencies": {
