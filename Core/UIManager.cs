@@ -228,7 +228,7 @@ namespace UIManagement
 
             if (panelData.UIPanel != null)
             {
-                if(panelData.UIPanel.State == UIPanelState.Hidden)
+                if(panelData.UIPanel.State == UIPanelState.Hidden || panelData.UIPanel.State == UIPanelState.Hiding)
                 {
                     await panelData.UIPanel.Show();
                 }
@@ -249,7 +249,7 @@ namespace UIManagement
 
             if (panelData.UIPanel != null)
             {
-                if(panelData.UIPanel.State == UIPanelState.Visible)
+                if(panelData.UIPanel.State == UIPanelState.Visible || panelData.UIPanel.State == UIPanelState.Showing)
                 {
                     await panelData.UIPanel.Hide();
                 }

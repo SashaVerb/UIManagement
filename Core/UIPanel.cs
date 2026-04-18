@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 
@@ -13,6 +14,10 @@ namespace UIManagement
         
         public UIPanelState State { get; private set; } = UIPanelState.Hidden;
 
+        public CancellationToken AnimationToken => _animationCts?.Token ?? CancellationToken.None;
+
+        private CancellationTokenSource _animationCts;
+
         public bool IsInteractable => State == UIPanelState.Visible;
         
         public event Action OnShowStarted;
@@ -22,16 +27,22 @@ namespace UIManagement
 
         private void Awake()
         {
-            CanvasGroupComponent = GetComponent<CanvasGroup>();
-            
             _animator.SetupInitialState(this);
             SetInteractable(false);
+        }
+
+        private void OnDestroy()
+        {
+            CancelCurrentAnimation();
         }
 
         public async UniTask Show()
         {
             if (State == UIPanelState.Visible || State == UIPanelState.Showing)
                 return;
+
+            CancelCurrentAnimation();
+            _animationCts = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
 
             State = UIPanelState.Showing;
             gameObject.SetActive(true);
@@ -41,7 +52,8 @@ namespace UIManagement
 
             if (_animator != null)
             {
-                await _animator.AnimateShow(this);
+                try { await _animator.AnimateShow(this); }
+                catch (OperationCanceledException) { return; }
             }
 
             State = UIPanelState.Visible;
@@ -55,6 +67,9 @@ namespace UIManagement
             if (State == UIPanelState.Hidden || State == UIPanelState.Hiding)
                 return;
 
+            CancelCurrentAnimation();
+            _animationCts = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
+
             State = UIPanelState.Hiding;
             SetInteractable(false);
             
@@ -62,7 +77,8 @@ namespace UIManagement
 
             if (_animator != null)
             {
-                await _animator.AnimateHide(this);
+                try { await _animator.AnimateHide(this); }
+                catch (OperationCanceledException) { return; }
             }
 
             State = UIPanelState.Hidden;
@@ -73,6 +89,7 @@ namespace UIManagement
 
         public void ShowImmediate()
         {
+            CancelCurrentAnimation();
             State = UIPanelState.Visible;
             gameObject.SetActive(true);
             SetInteractable(true);
@@ -80,9 +97,17 @@ namespace UIManagement
 
         public void HideImmediate()
         {
+            CancelCurrentAnimation();
             State = UIPanelState.Hidden;
             gameObject.SetActive(false);
             SetInteractable(false);
+        }
+
+        private void CancelCurrentAnimation()
+        {
+            _animationCts?.Cancel();
+            _animationCts?.Dispose();
+            _animationCts = null;
         }
 
         private void SetInteractable(bool interactable)
