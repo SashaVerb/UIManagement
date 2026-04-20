@@ -25,7 +25,7 @@ namespace UIManagement
         public event Action OnHideStarted;
         public event Action OnHideCompleted;
 
-        private void Awake()
+        protected virtual void Awake()
         {
             _animator.SetupInitialState(this);
             SetInteractable(false);
