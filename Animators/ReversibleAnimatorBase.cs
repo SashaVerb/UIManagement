@@ -10,8 +10,10 @@ namespace UIManagement
         [SerializeField] protected float _duration = 1f;
         [SerializeField] protected AnimationCurve _curve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
+        public override float Duration => _duration;
+        
         private readonly Dictionary<int, float> _progress = new();
-
+        
         protected float GetProgress(int instanceId) =>
             _progress.TryGetValue(instanceId, out var p) ? p : 0f;
 
@@ -32,6 +34,7 @@ namespace UIManagement
             while (true)
             {
                 float current = GetProgress(id);
+                Debug.Log($"Current: {current}, Target: {target} | {this.name}");
                 float delta = speed * Time.unscaledDeltaTime;
                 float next = target > current
                     ? Mathf.Min(current + delta, target)
