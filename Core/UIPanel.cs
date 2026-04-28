@@ -17,8 +17,10 @@ namespace UIManagement
         public CancellationToken AnimationToken => _animationCts?.Token ?? CancellationToken.None;
 
         private CancellationTokenSource _animationCts;
+        private float _animationTime = 0f;
 
         public bool IsInteractable => State == UIPanelState.Visible;
+        public bool IsVisible => State == UIPanelState.Visible || State == UIPanelState.Showing;
         
         public event Action OnShowStarted;
         public event Action OnShowCompleted;
@@ -27,7 +29,7 @@ namespace UIManagement
 
         protected virtual void Awake()
         {
-            _animator.SetupInitialState(this);
+            _animator?.SetupInitialState(this);
             SetInteractable(false);
         }
 
@@ -52,7 +54,7 @@ namespace UIManagement
 
             if (_animator != null)
             {
-                try { await _animator.AnimateShow(this); }
+                try { await AnimateToProgress(1f, _animationCts.Token); }
                 catch (OperationCanceledException) { return; }
             }
 
@@ -77,7 +79,7 @@ namespace UIManagement
 
             if (_animator != null)
             {
-                try { await _animator.AnimateHide(this); }
+                try { await AnimateToProgress(0f, _animationCts.Token); }
                 catch (OperationCanceledException) { return; }
             }
 
@@ -114,6 +116,38 @@ namespace UIManagement
         {
             if(CanvasGroupComponent != null)
                 CanvasGroupComponent.blocksRaycasts = interactable;
+        }
+        
+        private async UniTask AnimateToProgress(float targetProgress, CancellationToken cancellationToken)
+        {
+            float duration = _animator.Duration;
+            if (duration <= 0.0001f)
+            {
+                _animationTime = targetProgress * duration;
+                _animator.Evaluate(this, targetProgress);
+                return;
+            }
+
+            float startTime = _animationTime;
+            float startProgress = startTime / duration;
+            float targetTime = targetProgress * duration;
+            bool isForward = targetProgress > startProgress;
+
+            while (true)
+            {
+                float delta = Time.unscaledDeltaTime;
+                _animationTime = isForward
+                    ? Mathf.Min(_animationTime + delta, targetTime)
+                    : Mathf.Max(_animationTime - delta, targetTime);
+
+                float currentProgress = Mathf.Clamp01(_animationTime / duration);
+                _animator.Evaluate(this, currentProgress);
+
+                if (Mathf.Approximately(_animationTime, targetTime))
+                    break;
+
+                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+            }
         }
         
         private void OnValidate()

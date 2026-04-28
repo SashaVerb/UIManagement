@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEngine;
-using Cysharp.Threading.Tasks;
+﻿using UnityEngine;
 
 namespace UIManagement
 {
@@ -18,55 +15,32 @@ namespace UIManagement
                 animator?.SetupInitialState(panel);
         }
 
-        public override async UniTask AnimateShow(UIPanel panel)
-        {
-            var tasks = BuildShowTasks(panel);
-            await UniTask.WhenAll(tasks);
-        }
-
-        public override async UniTask AnimateHide(UIPanel panel)
+        public override void Evaluate(UIPanel panel, float progress)
         {
             float maxDuration = GetMaxDuration();
-            var tasks = BuildHideTasksAligned(panel, maxDuration);
-            await UniTask.WhenAll(tasks);
-        }
-
-        private List<UniTask> BuildShowTasks(UIPanel panel)
-        {
-            var tasks = new List<UniTask>(_animators.Length);
+            
             foreach (var animator in _animators)
             {
-                if (animator != null)
-                    tasks.Add(animator.AnimateShow(panel));
+                if (animator == null) continue;
+                
+                float normalizedProgress = CalculateNormalizedProgress(progress, animator.Duration, maxDuration);
+                animator.Evaluate(panel, normalizedProgress);
             }
-            return tasks;
         }
-
-        private List<UniTask> BuildHideTasksAligned(UIPanel panel, float maxDuration)
+        
+        private float CalculateNormalizedProgress(float globalProgress, float animatorDuration, float maxDuration)
         {
-            var tasks = new List<UniTask>(_animators.Length);
-            foreach (var animator in _animators)
-            {
-                if (animator == null)
-                    continue;
-
-                float delay = maxDuration - animator.Duration;
-                tasks.Add(delay > 0f
-                    ? HideAfterDelay(animator, panel, delay)
-                    : animator.AnimateHide(panel));
-            }
-            return tasks;
-        }
-
-        private async UniTask HideAfterDelay(UIPanelAnimator animator, UIPanel panel, float delay)
-        {
-            await UniTask.Delay(
-                TimeSpan.FromSeconds(delay),
-                DelayType.UnscaledDeltaTime,
-                PlayerLoopTiming.Update,
-                panel.AnimationToken);
-
-            await animator.AnimateHide(panel);
+            if (animatorDuration <= 0f || maxDuration <= 0f)
+                return globalProgress;
+            
+            float delay = maxDuration - animatorDuration;
+            float delayNormalized = delay / maxDuration;
+            
+            if (globalProgress < delayNormalized)
+                return 0f;
+            
+            float adjustedProgress = (globalProgress - delayNormalized) / (1f - delayNormalized);
+            return Mathf.Clamp01(adjustedProgress);
         }
 
         private float GetMaxDuration()

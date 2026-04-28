@@ -1,5 +1,4 @@
 using UnityEngine;
-using Cysharp.Threading.Tasks;
 
 namespace UIManagement
 {
@@ -7,8 +6,7 @@ namespace UIManagement
     {
         public virtual float Duration => 0f;
         
-        public abstract UniTask AnimateShow(UIPanel panel);
-        public abstract UniTask AnimateHide(UIPanel panel);
+        public abstract void Evaluate(UIPanel panel, float progress);
         public abstract void SetupInitialState(UIPanel panel);
     }
 }
