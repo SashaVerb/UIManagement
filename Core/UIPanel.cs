@@ -9,6 +9,7 @@ namespace UIManagement
     public class UIPanel : MonoBehaviour
     {
         [SerializeField] private UIPanelAnimator _animator;
+        [SerializeField] private bool _activeOnAwake;
         
         [field: SerializeField] public CanvasGroup CanvasGroupComponent { get; private set; }
         
@@ -30,7 +31,7 @@ namespace UIManagement
         protected virtual void Awake()
         {
             _animator?.SetupInitialState(this);
-            SetInteractable(false);
+            SetInteractable(_activeOnAwake);
         }
 
         private void OnDestroy()
