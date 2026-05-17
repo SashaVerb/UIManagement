@@ -38,8 +38,18 @@ namespace UIManagement
         {
             CancelCurrentAnimation();
         }
+        
+        public void Show()
+        {
+            ShowAsync().Forget();
+        }
+        
+        public void Hide()
+        {
+            HideAsync().Forget();
+        }
 
-        public async UniTask Show()
+        public async UniTask ShowAsync()
         {
             if (State == UIPanelState.Visible || State == UIPanelState.Showing)
                 return;
@@ -65,7 +75,7 @@ namespace UIManagement
             OnShowCompleted?.Invoke();
         }
 
-        public async UniTask Hide()
+        public async UniTask HideAsync()
         {
             if (State == UIPanelState.Hidden || State == UIPanelState.Hiding)
                 return;
